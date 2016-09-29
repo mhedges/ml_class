@@ -22,10 +22,9 @@ def cluster_gen():
     num_clusters = 3
     num_points = 20
 
-    points = np.array([[0.]* num_points * num_clusters ,[0.] * num_points * 
-    num_clusters])
-    x = np.array([0.] * num_points * num_clusters)
-    y = np.array([0.] * num_points * num_clusters)
+    #points = np.array([[0.]* num_points * num_clusters ,[0.] * num_points * 
+    #num_clusters])
+    raw_points = []
 
     point_index = 0
     for i in range(num_clusters):
@@ -34,20 +33,30 @@ def cluster_gen():
         for j in range(20):
             x_cor = random.normal(x1,2.5)
             y_cor = random.normal(y1,2.5)
-            points[0][point_index] = x_cor
-            points[1][point_index] = y_cor
-            x[point_index] = x_cor
-            y[point_index] = y_cor
+
+            #points[0][point_index] = x_cor
+            #points[1][point_index] = y_cor
+
+            point = [0, x_cor, y_cor]
+            raw_points.append(point)
             point_index += 1
 
+    points = np.array(raw_points)
     return points
 
 def kmeans():
     points = cluster_gen()
-    print(points[0])
-    print(points[1])
+    print(points)
+    npoints = len(points)
+    print(npoints)
+    x = np.array([0.]*npoints)
+    y = np.array([0.]*npoints)
 
-    plt.scatter(points[0], points[1])
+    for i in range(npoints):
+        x[i] = points[i][1]
+        y[i] = points[i][2]
+
+    plt.scatter(x, y)
     plt.show()
 
 def main():
