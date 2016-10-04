@@ -12,7 +12,8 @@ from pylab import plot, ylim
 from random import choice
 from scipy.spatial import distance
 
-np.random.seed(17)
+np.random.seed()
+#np.random.seed(17)
 
 def main():
     x = 0
@@ -70,8 +71,6 @@ def main():
         points.append(point)
     points = np.array(points)
 
-    plt.scatter(x, y)
-
     ### Define number of clusters
     k = 3
 
@@ -79,16 +78,25 @@ def main():
 
     centers = []
 
-    p1 = (points[np.unravel_index(np.ndarray.argmax(distances), 
-        distances.shape)[0]])
-    p2 = (points[np.unravel_index(np.ndarray.argmax(distances), 
-        distances.shape)[1]])
+    ### "Smartly" generated centers
+    #p1 = (points[np.unravel_index(np.ndarray.argmax(distances), 
+    #    distances.shape)[0]])
+    #p2 = (points[np.unravel_index(np.ndarray.argmax(distances), 
+    #    distances.shape)[1]])
 
+    #centers.append(p1)
+    #centers.append(p2)
+
+    #p3 = ([ abs(p1[0] - p2[0])/2. , np.amax(y)] if (abs(p1[0] - p2[0]) > 
+    #        abs(p1[1] - p2[1])) else ([ abs(p1[0] - p2[0])/2.]))
+    #centers.append(p3)
+
+    ### Randomly generated centers
+    p1 = [np.random.uniform(min(x), max(x)), np.random.uniform(min(y), max(y))]
     centers.append(p1)
+    p2 = [np.random.uniform(min(x), max(x)), np.random.uniform(min(y), max(y))]
     centers.append(p2)
-
-    p3 = ([ abs(p1[0] - p2[0])/2. , np.amax(y)] if (abs(p1[0] - p2[0]) > 
-            abs(p1[1] - p2[1])) else ([ abs(p1[0] - p2[0])/2.]))
+    p3 = [np.random.uniform(min(x), max(x)), np.random.uniform(min(y), max(y))]
     centers.append(p3)
 
     centers = np.array(centers)
@@ -108,6 +116,7 @@ def main():
     while np.array_equiv(old_centroids, centroids) == False :
         nums = [0]*k
         old_centroids = centroids
+        centroids = np.array([[0.,0.]] * k)
 
         for k_id, x, y in gen_points:
             nums[int(k_id)] += 1
@@ -135,6 +144,13 @@ def main():
     #    plt.scatter(x, y)
     for x, y in centroids:
         plt.scatter(x, y, color='red')
+    for k_id, x, y in gen_points:
+        if k_id == 0:
+            plt.scatter(x,y, color='green')
+        if k_id == 1:
+            plt.scatter(x,y, color='black')
+        if k_id == 2:
+            plt.scatter(x,y, color='blue')
     plt.show()
 
 if __name__ == "__main__":
