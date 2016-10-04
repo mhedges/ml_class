@@ -10,14 +10,14 @@ from math import sqrt
 
 from pylab import plot, ylim
 from random import choice
-from numpy import array, dot, random
+from scipy.spatial import distance
 
-random.seed(17)
+np.random.seed(17)
 
 def main():
     x = 0
 
-
+### Generate set number of clusters each of set number of points
 def cluster_gen():
     num_clusters = 3
     num_points = 20
@@ -28,11 +28,11 @@ def cluster_gen():
 
     point_index = 0
     for i in range(num_clusters):
-        x1 = random.randint(5,100)
-        y1 = random.randint(5,100)
+        x1 = np.random.randint(5,100)
+        y1 = np.random.randint(5,100)
         for j in range(20):
-            x_cor = random.normal(x1,2.5)
-            y_cor = random.normal(y1,2.5)
+            x_cor = np.random.normal(x1,2.5)
+            y_cor = np.random.normal(y1,2.5)
 
             #points[0][point_index] = x_cor
             #points[1][point_index] = y_cor
@@ -44,23 +44,70 @@ def cluster_gen():
     points = np.array(raw_points)
     return points
 
-def kmeans():
-    points = cluster_gen()
-    print(points)
-    npoints = len(points)
+def main():
+    gen_points = cluster_gen()
+    print(gen_points)
+    npoints = len(gen_points)
     print(npoints)
     x = np.array([0.]*npoints)
     y = np.array([0.]*npoints)
+    points = []
 
     for i in range(npoints):
-        x[i] = points[i][1]
-        y[i] = points[i][2]
+        x[i] = gen_points[i][1]
+        y[i] = gen_points[i][2]
+        point = [x[i],y[i]]
+        points.append(point)
+    points = np.array(points)
 
+    ### Define number of clusters
+    k = 3
+
+    if k == 3: print(k)
+    centers = []
+    #for i in range(k):
+    #    x1 = np.random.uniform(0,max(x))
+    #    y1 = np.random.uniform(0,max(y))
+    #    center = [x1,y1]
+    #    centers.append(center)
+    #print(centers)
+    #centers = np.array(centers)
+    #print(centers)
+
+    distances = distance.cdist(points,points,'euclidean')
+    #print(np.amax(distances))
+    #print(np.where(distances == distances.max()))
+
+    p1 = (points[np.unravel_index(np.ndarray.argmax(distances), 
+        distances.shape)[0]])
+    p2 = (points[np.unravel_index(np.ndarray.argmax(distances), 
+        distances.shape)[1]])
+
+    centers.append(p1)
+    centers.append(p2)
+
+    p3 = ([ abs(p1[0] - p2[0])/2. , np.amax(y)] if (abs(p1[0] - p2[0]) > 
+            abs(p1[1] - p2[1])) else ([ abs(p1[0] - p2[0])/2.]))
+    centers.append(p3)
+
+    centers = np.array(centers)
+    #print(centers)
+
+    for i in range(len(points)):
+        clust_dist = []
+        for j in range(k):
+            dist = np.linalg.norm(points[i]-centers[j])
+            clust_dist.append(dist)
+        print(clust_dist)
+        clust_dist = np.array(clust_dist)
+        cluster_id = (np.where(clust_dist == clust_dist.min()))[0][0]
+        gen_points[i][0] = cluster_id
+        print(cluster_id)
+        #print(np.where(clust_dist == clust_dist.min()))
+
+    print(gen_points)
     plt.scatter(x, y)
     plt.show()
-
-def main():
-    kmeans()
 
 if __name__ == "__main__":
     main()
