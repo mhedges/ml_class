@@ -22,8 +22,6 @@ def cluster_gen():
     num_clusters = 3
     num_points = 20
 
-    #points = np.array([[0.]* num_points * num_clusters ,[0.] * num_points * 
-    #num_clusters])
     raw_points = []
 
     point_index = 0
@@ -62,17 +60,6 @@ def main():
 
     ### Define number of clusters
     k = 3
-
-    if k == 3: print(k)
-    centers = []
-    #for i in range(k):
-    #    x1 = np.random.uniform(0,max(x))
-    #    y1 = np.random.uniform(0,max(y))
-    #    center = [x1,y1]
-    #    centers.append(center)
-    #print(centers)
-    #centers = np.array(centers)
-    #print(centers)
 
     distances = distance.cdist(points,points,'euclidean')
     #print(np.amax(distances))
