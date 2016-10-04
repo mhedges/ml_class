@@ -42,11 +42,23 @@ def cluster_gen():
     points = np.array(raw_points)
     return points
 
+def clustering(centers, points, k):
+    clust_dists = []
+    for i in range(len(points)):
+        clust_dist = []
+        for j in range(k):
+            dist = np.linalg.norm(points[i]-centers[j])
+            clust_dist.append(dist)
+
+        clust_dist = np.array(clust_dist)
+        clust_dists.append(clust_dist)
+        #cluster_id = (np.where(clust_dist == clust_dist.min()))[0][0]
+        #gen_points[i][0] = cluster_id
+    return clust_dists
+
 def main():
     gen_points = cluster_gen()
-    print(gen_points)
     npoints = len(gen_points)
-    print(npoints)
     x = np.array([0.]*npoints)
     y = np.array([0.]*npoints)
     points = []
@@ -58,12 +70,14 @@ def main():
         points.append(point)
     points = np.array(points)
 
+    plt.scatter(x, y)
+
     ### Define number of clusters
     k = 3
 
     distances = distance.cdist(points,points,'euclidean')
-    #print(np.amax(distances))
-    #print(np.where(distances == distances.max()))
+
+    centers = []
 
     p1 = (points[np.unravel_index(np.ndarray.argmax(distances), 
         distances.shape)[0]])
@@ -78,22 +92,49 @@ def main():
     centers.append(p3)
 
     centers = np.array(centers)
-    #print(centers)
+    for x, y in centers:
+        plt.scatter(x, y, color='orange')
 
-    for i in range(len(points)):
-        clust_dist = []
-        for j in range(k):
-            dist = np.linalg.norm(points[i]-centers[j])
-            clust_dist.append(dist)
-        print(clust_dist)
-        clust_dist = np.array(clust_dist)
+    clust_dists = clustering(centers, points, k)
+
+    for i in range(len(clust_dists)):
+        clust_dist = clust_dists[i]
         cluster_id = (np.where(clust_dist == clust_dist.min()))[0][0]
         gen_points[i][0] = cluster_id
-        print(cluster_id)
-        #print(np.where(clust_dist == clust_dist.min()))
 
+    centroids = np.array([[0.,0.]] * k)
+    old_centroids = centers
+    
+    while np.array_equiv(old_centroids, centroids) == False :
+        nums = [0]*k
+        old_centroids = centroids
+
+        for k_id, x, y in gen_points:
+            nums[int(k_id)] += 1
+            centroids[int(k_id)][0] += x
+            centroids[int(k_id)][1] += y
+
+        for i in range(k):
+            centroids[i][0] /= nums[i]
+            centroids[i][1] /= nums[i]
+        print(centroids)
+        print(old_centroids)
+        clust_dists = clustering(centroids, points, k)
+        for i in range(len(clust_dists)):
+            clust_dist = clust_dists[i]
+            cluster_id = (np.where(clust_dist == clust_dist.min()))[0][0]
+            gen_points[i][0] = cluster_id
+
+        #input('well?')
+
+    print('Algorithm converged for k = %i clusters' % k)
     print(gen_points)
-    plt.scatter(x, y)
+    print(centroids)
+
+    #for x, y in points:
+    #    plt.scatter(x, y)
+    for x, y in centroids:
+        plt.scatter(x, y, color='red')
     plt.show()
 
 if __name__ == "__main__":
