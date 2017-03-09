@@ -1,52 +1,9 @@
-
-### This is the additional code required for handling the ROOT files for TPCs
-#from root_numpy import root2rec
-#
-#import numpy as np
-#import os
-#
-#
-#tt = np.zeros([336, 80])
-#alpha_counter = 0
-#xray_counter = 0
-#data_x = []
-#data_y = []
-#
-#datapath = '/Users/BEASTzilla/BEAST/data/TPC/tpc_toushekrun/2016-05-29/TPC4/'
-#
-#for f in os.listdir(datapath):
-#    ifile = str(datapath) + str(f)
-#    data = root2rec(ifile)
-#
-#    for event in data :
-#        if event.proton == 1: continue
-#        if event.other == 1 and event.xray == 0: continue
-#        e_type = 0
-#        if (event.bottom_alpha == 1 or event.top_alpha== 1) : alpha_counter += 1
-#        if alpha_counter % 50 == 0: e_type = 1
-#        if event.xray == 1 : xray_counter += 1
-#        if xray_counter % 50 == 0: e_type = 2
-#        if event.neutron == 1: e_type = 3
-#        if e_type ==0: continue
-#        data_y.append(e_type)
-#
-#        pix = tt
-#        cols = event.col
-#        rows = event.row
-#        for i in range(event.npoints):
-#            pix[rows[i]-1][cols[i]-1] = 1
-#        pix.reshape(336*80,1)
-#        data_x.append(pix)
-#
-#data_x = np.array(data_x)
-#data_y = np.array(data_y)
-
-''' To Do:
-    1) Break up data into training, test, and validation set according to
-    format used in original neural net program
-    2) Check results with only using 1 for pixel TOT
-    3) Change pixel matrix values to (TOT+1)/16 to add charge information
-'''
+from __future__ import print_function
+""" 
+    Adapted code from DeepLearning.net for physics particle identification
+    Based largely on tutorial code provided
+    Author: M. T. Hedges
+"""
 
 """
 This tutorial introduces logistic regression using Theano and stochastic
@@ -83,7 +40,6 @@ References:
 
 """
 
-from __future__ import print_function
 from root_numpy import root2rec
 
 __docformat__ = 'restructedtext en'
@@ -223,7 +179,7 @@ class LogisticRegression(object):
             raise NotImplementedError()
 
 
-def load_data(dataset):
+def load_data(ipath):
     ''' Loads the dataset
 
     :type dataset: string
@@ -257,41 +213,68 @@ def load_data(dataset):
 
     print('... loading data')
 
-    tt = numpy.zeros([336, 80])
-    alpha_counter = 0
-    xray_counter = 0
+    alpha_counter = 1
+    xray_counter = 1
     data_x = []
     data_y = []
     
-    datapath = '/Users/BEASTzilla/BEAST/data/TPC/tpc_toushekrun/2016-05-29/TPC4/'
+    datapath = ipath
     
     for f in os.listdir(datapath):
         ifile = str(datapath) + str(f)
         data = root2rec(ifile)
     
         for event in data :
-            if event.proton == 1: continue
-            if event.other == 1 and event.xray == 0: continue
-            e_type = 0
-            if (event.bottom_alpha == 1 or event.top_alpha== 1) : alpha_counter += 1
-            if alpha_counter % 50 == 0: e_type = 1
-            if event.xray == 1 : xray_counter += 1
-            if xray_counter % 50 == 0: e_type = 2
-            if event.neutron == 1: e_type = 3
-            if e_type ==0: continue
-            data_y.append(e_type)
-    
-            pix = tt
-            cols = event.col
-            rows = event.row
-            for i in range(event.npoints):
-                pix[rows[i]-1][cols[i]-1] = 1
-            pix.reshape(336*80,1)
-            data_x.append(pix)
-    
-    data_x = numpy.array(data_x)
-    data_y = numpy.array(data_y)
+        
+            e_type = 3
 
+            if event.proton == 1 or (event.other == 1 and event.xray == 0): continue
+            if (event.bottom_alpha == 1 or event.top_alpha== 1) : alpha_counter += 1
+            if alpha_counter % 50 == 0 : 
+                e_type = 0
+                alpha_counter = 1
+            if event.xray == 1 : xray_counter += 1
+            if xray_counter % 50 == 0 : 
+                e_type = 1
+                xray_counter = 1
+            if event.neutron == 1 : e_type = 2
+            if e_type < 3 :
+                data_y.append(e_type)
+        
+                pix = numpy.zeros([336, 80])
+                cols = event.col
+                rows = event.row
+                for i in range(event.npoints):
+                    pix[rows[i]-1][cols[i]-1] = 1
+                    #pix[rows[i]-1][cols[i]-1] = (event.tot[i]+1)/16
+                    #pix[rows[i]-1][cols[i]-1] = (event.tot[i]+1)
+                pix = numpy.reshape(pix, 336*80)
+                data_x.append(pix)
+    
+    data_x = numpy.asarray(data_x, dtype=numpy.float32)
+    data_y = numpy.asarray(data_y, dtype=numpy.float32)
+
+    train = int(len(data_x) * 0.8)
+    test = int((len(data_x)-train)/2)
+
+    train_x = data_x[:train]
+    train_y = data_y[:train]
+
+    valid_x = data_x[train:-(test+1)]
+    valid_y = data_y[train:-(test+1)]
+
+    test_x = data_x[-test:]
+    test_y = data_y[-test:]
+
+    #test_x = data_x[train:train+test]
+    #test_y = data_y[train:train+test]
+
+    #valid_x = data_x[:test]
+    #valid_y = data_y[:test]
+
+    test_set = [test_x, test_y]
+    valid_set = [valid_x, valid_y]
+    train_set = [train_x, train_y]
     # Load the dataset
     #with gzip.open(dataset, 'rb') as f:
     #    try:
@@ -328,6 +311,7 @@ def load_data(dataset):
         # floats it doesn't make sense) therefore instead of returning
         # ``shared_y`` we will have to cast it to int. This little hack
         # lets ous get around this issue
+        #shared_x = shared_x.flatten()
         return shared_x, T.cast(shared_y, 'int32')
 
     test_set_x, test_set_y = shared_dataset(test_set)
@@ -340,8 +324,8 @@ def load_data(dataset):
 
 
 def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
-                           dataset='mnist.pkl.gz',
-                           batch_size=600):
+                           #dataset='mnist.pkl.gz',
+                           batch_size=50):
     """
     Demonstrate stochastic gradient descent optimization of a log-linear
     model
@@ -360,11 +344,16 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
                  http://www.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz
 
     """
-    datasets = load_data(dataset)
+    datapath = '/Users/BEASTzilla/BEAST/data/TPC/tpc_toushekrun/rh_coords/2016-05-29/TPC4/'
+    #datasets = load_data(dataset)
+    datasets = load_data(datapath)
 
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
     test_set_x, test_set_y = datasets[2]
+    train_set_y = train_set_y
+    valid_set_y = valid_set_y
+    test_set_y = valid_set_y
 
     # compute number of minibatches for training, validation and testing
     n_train_batches = train_set_x.get_value(borrow=True).shape[0] // batch_size
@@ -386,7 +375,9 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
 
     # construct the logistic regression class
     # Each MNIST image has size 28*28
-    classifier = LogisticRegression(input=x, n_in=28 * 28, n_out=10)
+    #classifier = LogisticRegression(input=x, n_in=28 * 28, n_out=10)
+
+    classifier = LogisticRegression(input=x, n_in=336*80, n_out=4)
 
     # the cost we minimize during training is the negative log likelihood of
     # the model in symbolic format
@@ -441,7 +432,8 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
     ###############
     print('... training the model')
     # early-stopping parameters
-    patience = 5000  # look as this many examples regardless
+    #patience = 5000  # look as this many examples regardless
+    patience = 1000  # look as this many examples regardless
     patience_increase = 2  # wait this much longer when a new best is
                                   # found
     improvement_threshold = 0.995  # a relative improvement of this much is
